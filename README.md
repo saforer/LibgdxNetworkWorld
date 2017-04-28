@@ -1,0 +1,2 @@
+# LibgdxNetworkWorld
+Neural network AI 
