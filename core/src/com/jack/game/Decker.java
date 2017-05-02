@@ -34,6 +34,7 @@ public class Decker {
 	Vector2 oldPos;
 
 	int energy = 1000;
+	int energyMax = 10000;
 	int energyCostPerSecond = 10;
 
 
@@ -89,6 +90,9 @@ public class Decker {
 			energy-=energyCostPerSecond*dt;
 		}
 
+		if (energy > energyMax) {
+			energy = energyMax;
+		}
 
 		if (rotating) {
 			if (rotatingAmount > 0) {
@@ -181,15 +185,15 @@ public class Decker {
 	public void birth() {
 		Vector2 tileBehind = tileInFront(180);
 		if (map.doesTileExistAtLocation( (int) tileBehind.x, (int) tileBehind.y)) {
-			if (energy > 1000) {
+			if (energy > 500) {
 				System.out.println("I'm at " + gridX + " " + gridY);
 				System.out.println("Birthing on " + tileBehind.x + " " + tileBehind.y);
 				energy = energy / 2;
 				int r = MathUtils.random(Direction.values().length-1);
 				Decker d = new Decker((int) tileBehind.x, (int) tileBehind.y, Direction.values()[r]);
-				d.energy = 500;
+				d.energy = energy;
+				d.ai = new NeuralAI((NeuralAI)ai);
 				d.ai.parent = d;
-				if (ai != null) d.ai = new NeuralAI((NeuralAI) ai);
 				map.addDecker(d);
 			}
 		}
@@ -303,5 +307,13 @@ public class Decker {
 			return 1.0f;
 		}
 		return 0.0f;
+	}
+
+	public float wallInFront() {
+		Vector2 tileToCheck = tileInFront(0);
+		if (map.doesTileExistAtLocation((int) tileToCheck.x, (int) tileToCheck.y)) {
+			return 0.0f;
+		}
+		return 1.0f;
 	}
 }

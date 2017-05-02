@@ -2,266 +2,252 @@ package com.jack.game;
 
 
 import com.badlogic.gdx.math.MathUtils;
-import com.jack.game.neuralJunk.Connection;
-import com.jack.game.neuralJunk.Node;
-import com.jack.game.neuralJunk.NodeType;
+import com.jack.game.NeuralPack.Link;
+import com.jack.game.NeuralPack.Node;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by Forer on 4/28/2017.
+ * Created by Forer on 5/2/2017.
  */
 public class NeuralAI extends AI{
-	float aiTimer = 1f;
-	float aiCount = 0;
-	float aiSpeed = 2f;
+	/*
+	This is to be a neural network, not neat, neat will be neatAi
+	 */
 
-	public List<Node> nodeList = new ArrayList<Node>();
-	public List<Connection> connectionList = new ArrayList<Connection>();
+	float actionCount = 0;
+	int listWidth = 4;
+	int listHeight = 4;
+	List<List<Node>> masterList = new ArrayList<List<Node>>();
+	List<Link> linkList = new ArrayList<Link>();
 
-	public NeuralAI(NeuralAI cloneThis) {
-		this.nodeList = cloneThis.nodeList;
-		this.connectionList = cloneThis.connectionList;
+	public NeuralAI(NeuralAI parentAI) {
+		//First add sensors
+		/*
+			leftsightfood
+			leftsightbot
+			middlesightfood
+			middlesightbot
+			rightsightfood
+			rightsightbot
+			constant
+			wallInFront
+		 */
+		List<Node> sensorList = new ArrayList<Node>();
+		for (int i = 0; i <= 8; i++) {
+			sensorList.add(new Node());
+		}
+		masterList.add(sensorList);
+
+		//Add the filler center node stuff)
+		List<Node> temp;
+		for (int x = 0; x<listWidth; x++) {
+			temp = new ArrayList<Node>();
+			for (int y = 0; y<listHeight; y++) {
+				temp.add(new Node());
+			}
+			masterList.add(temp);
+		}
+
+
+		//Add the output nodes
+		/*
+			rotateleft
+			rotateright
+			move
+			nothing
+			birth
+		 */
+		List<Node> outputList = new ArrayList<Node>();
+		for (int i = 0; i <= 5; i++) {
+			outputList.add(new Node());
+		}
+		masterList.add(outputList);
+
+
+		//We have a parent, Use the connections that they gave us
+		for (Link l : parentAI.linkList) {
+			linkList.add(new Link(l.in, l.out, l.weight));
+		}
 	}
 
-	public NeuralAI () {
-		//New AI from scratch
-		//LeftSightBot - 0
-		//LeftSightFood - 1
-		//MiddleSightBot - 2
-		//MiddleSightFood - 3
-		//RightSightBot - 4
-		//RightSightFood - 5
-		//Nothing - 6
-		//TurnLeft - 7
-		//TurnRight - 8
-		//MoveForward - 9
-		//Birth - 10
-		nodeList.add(new Node("LeftSightBot", 0, NodeType.sensor));
-		nodeList.add(new Node("LeftSightFood", 1, NodeType.sensor));
-		nodeList.add(new Node("MiddleSightBot", 2, NodeType.sensor));
-		nodeList.add(new Node("MiddleSightFood", 3, NodeType.sensor));
-		nodeList.add(new Node("RightSightBot", 4, NodeType.sensor));
-		nodeList.add(new Node("RightSightFood", 5, NodeType.sensor));
-		nodeList.add(new Node("Nothing", 6, NodeType.output));
-		nodeList.add(new Node("TurnLeft", 7, NodeType.output));
-		nodeList.add(new Node("TurnRight", 8, NodeType.output));
-		nodeList.add(new Node("Forward", 9, NodeType.output));
-		nodeList.add(new Node("Birth", 10, NodeType.output));
-		setupAddConnection();
-		setupAddConnection();
-	}
+	public NeuralAI() {
+		//First add sensors
+		/*
+			leftsightfood
+			leftsightbot
+			middlesightfood
+			middlesightbot
+			rightsightfood
+			rightsightbot
+			constant
+			wallInFront
+		 */
+		List<Node> sensorList = new ArrayList<Node>();
+		for (int i = 0; i <= 8; i++) {
+			sensorList.add(new Node());
+		}
+		masterList.add(sensorList);
 
-	public String toString() {
-		String output = "";
-		for (Node n : nodeList) {
-			if ((n.type != NodeType.output) && (n.type != NodeType.sensor)) {
-				output += n.nodeNo + " " + n.type + " " + n.value + " ";
+		//Add the filler center node stuff)
+		List<Node> temp;
+		for (int x = 0; x<listWidth; x++) {
+			temp = new ArrayList<Node>();
+			for (int y = 0; y<listHeight; y++) {
+				temp.add(new Node());
+			}
+			masterList.add(temp);
+		}
+
+
+		//Add the output nodes
+		/*
+			rotateleft
+			rotateright
+			move
+			nothing
+			birth
+		 */
+		List<Node> outputList = new ArrayList<Node>();
+		for (int i = 0; i <= 5; i++) {
+			outputList.add(new Node());
+		}
+		masterList.add(outputList);
+
+
+		//Now connect all of them up!
+		for (int i = 0; i <= listWidth; i++) {
+			temp = masterList.get(i);
+			List<Node> temp2 = masterList.get((i+1));
+			for (Node n : temp2) {
+				for (Node node : temp) {
+					linkList.add(new Link(node, n, MathUtils.random(2.0f) - 1.0f));
+				}
 			}
 		}
-
-		output += "\n";
-		for (Connection c : connectionList) {
-			output += c.input.nodeName + " " + c.output.nodeName + " " + c.weight + " " + c.enabled + "\n";
-		}
-
-		return output;
-	}
-
-	void setupAddConnection() {
-		Node n1 = null;
-		Node n2 = null;
-
-		while (n1 == null) {
-			//Input only
-			Node test = nodeList.get(MathUtils.random(nodeList.size()-1));
-
-			if (test.type!=NodeType.output) {
-				n1 = test;
-			}
-		}
-
-
-
-		while (n2 == null) {
-			//Output only
-			Node test = nodeList.get(MathUtils.random(nodeList.size()-1));
-
-			if (test.type!=NodeType.sensor) {
-				n2 = test;
-			}
-		}
-
-
-
-		//Is connection unique?
-		if (connectionUnique(n1, n2)) {
-			float w = MathUtils.random(2.0f) - 1.0f;
-			connectionList.add(new Connection(n1, n2, w, true));
-		}
-
-	}
-
-	public boolean connectionUnique (Node n1, Node n2) {
-		for (Connection c : connectionList) {
-			if (c.input == n1 && c.output == n2) {
-				return false;
-			}
-		}
-		return true;
 	}
 
 
+	@Override
 	public void update(float dt) {
+		if (actionCount >= parent.map.actionTimer) {
+			actionCount=0.0f;
 
-		if ((!parent.moving) && (!parent.rotating)) {
-			if (aiCount >= aiTimer) {
-				aiCount=0;
-				action();
-			} else {
-				aiCount+=aiSpeed * dt;
-			}
-		}
+			List<Node> sensors = masterList.get(0);
 
-	}
+		/*
+			leftsightfood
+			leftsightbot
+			middlesightfood
+			middlesightbot
+			rightsightfood
+			rightsightbot
+			constant
+			wallInFront
+		 */
+			sensors.get(0).value = parent.leftSightFood();
+			sensors.get(1).value = parent.leftSightBot();
+			sensors.get(2).value = parent.middleSightFood();
+			sensors.get(3).value = parent.middleSightBot();
+			sensors.get(4).value = parent.rightSightFood();
+			sensors.get(5).value = parent.rightSightBot();
+			sensors.get(6).value = 1.0f;
+			sensors.get(7).value = parent.wallInFront();
 
-	public void action() {
-		resetNodes();
-
-		while (!areAllNodesComplete()) {
-			for (Node n : nodeList) {
-				//Don't work on worked on stuff
-				if (!n.complete) {
-					//Work on stuff you can work on
-					if (nodesCompleteBeforeThisNode(n)) {
-						n.value = getNodeValue(n);
-						n.complete = true;
+			List<Node> currentTier;
+			Node currentNode;
+			List<Link> allLinks;
+			for (int i = 1; i <= listWidth+1; i++) {
+				currentTier = masterList.get(i);
+				for (int j = 0; j < currentTier.size(); j++) {
+					currentNode = currentTier.get(j);
+					allLinks = getLinkWithNodeAsOutput(currentNode);
+					for (Link l : allLinks) {
+						currentNode.value += nodeLinkValue(l);
 					}
+					currentNode.value = sigmoid(currentNode.value);
 				}
 			}
-		}
 
-		Node highest = null;
-		for (Node n : nodeList) {
-			if (n.type == NodeType.output) {
-				if (highest == null) {
-					highest = n;
-				} else if (highest.value < n.value) {
-					highest = n;
+		/*
+			rotateleft
+			rotateright
+			move
+			nothing
+			birth
+		 */
+			int highestInt = 0;
+			float highestValue = 0;
+			for (int i = 0; i <= 5; i++) {
+				if (masterList.get(listWidth+1).get(i).value > highestValue) {
+					highestInt = i;
+					highestValue = masterList.get(listWidth+1).get(i).value;
 				}
 			}
-		}
 
-		switch(highest.nodeNo) {
-			//Nothing - 6
-			//TurnLeft - 7
-			//TurnRight - 8
-			//MoveForward - 9
-			//Birth - 10
-			case 6:
-				parent.doNothing();
-				break;
-			case 7:
-				parent.rotateLeft();
-				break;
-			case 8:
-				parent.rotateRight();
-				break;
-			case 9:
-				parent.move();
-				break;
-			case 10:
-				parent.birth();
-				break;
-		}
+			List<Node> sensList = masterList.get(0);
+			String out = "";
 
+			out += "LF " + sensList.get(0).value;
+			out += " LB " + sensList.get(1).value;
+			out += " MF " + sensList.get(2).value;
+			out += " MB " + sensList.get(3).value;
+			out += " RF " + sensList.get(4).value;
+			out += " RB " + sensList.get(5).value;
+			out += " Con " + sensList.get(6).value;
+			out += " Wall " + sensList.get(7).value;
 
-		//Debug, show me the values!
-		if (false) {
-			String output = "";
-			for (Node n : nodeList) {
-				if (n.type == NodeType.sensor) {
-					output += n.nodeName + " " + n.value + " ";
-				}
+			out += "\n";
+			List<Node> outList = masterList.get(listWidth+1);
+
+			out += "Left " + outList.get(0).value;
+			out += " Right " + outList.get(1).value;
+			out += " Move " + outList.get(2).value;
+			out += " Nothing " + outList.get(3).value;
+			out += " Birth " + outList.get(4).value + "\n";
+
+			System.out.print(out);
+
+			switch (highestInt) {
+				case 0:
+					parent.rotateLeft();
+					break;
+				case 1:
+					parent.rotateRight();
+					break;
+				case 2:
+					parent.move();
+					break;
+				case 3:
+					parent.doNothing();
+					break;
+				case 4:
+					parent.birth();
+					break;
 			}
-			output += "\n";
-			for (Node n : nodeList) {
-				if (n.type == NodeType.output) {
-					output += n.nodeName + " " + n.value + " ";
-				}
-			}
-			System.out.print(output + "\n");
+		} else {
+			actionCount+=dt;
 		}
-
 	}
 
-	public float getNodeValue(Node node) {
-		List<Float> weightAnswers = new ArrayList<Float>();
-		for (Connection c : connectionList) {
-			if (c.output == node) {
-				weightAnswers.add(c.input.value * c.weight);
+
+	public List<Link> getLinkWithNodeAsOutput (Node n) {
+		List<Link> out = new ArrayList<Link>();
+		for (Link l : linkList) {
+			if (l.out == n) {
+				out.add(l);
 			}
 		}
-
-		float output = 0.0f;
-		for (Float f : weightAnswers) {
-			output += f;
-		}
-
-		output = (float) ((1/( 1 + Math.pow(Math.E,(-1*output)))) * 2) - 1f;
-
-		return output;
+		return out;
 	}
 
-	public boolean nodesCompleteBeforeThisNode(Node n) {
-		List<Node> preNode = new ArrayList<Node>();
-		for (Connection c : connectionList) {
-			if (c.output == n) {
-				preNode.add(c.input);
-			}
-		}
-
-		for (Node node : preNode) {
-			if (node.complete==false) return false;
-		}
-		return true;
-
+	public float nodeLinkValue (Link l) {
+		return l.in.value * l.weight;
 	}
 
-	public void resetNodes() {
-		for (Node n : nodeList) {
-			if (n.type == NodeType.sensor) {
-				n.complete = true;
-			} else {
-				n.complete = false;
-			}
-			n.value = 0.0f;
-		}
-
-		//LeftSightBot - 0
-		//LeftSightFood - 1
-		//MiddleSightBot - 2
-		//MiddleSightFood - 3
-		//RightSightBot - 4
-		//RightSightFood - 5
-		//Nothing - 6
-		//TurnLeft - 7
-		//TurnRight - 8
-		//MoveForward - 9
-		//Birth - 10
-		nodeList.get(0).value = parent.leftSightBot();
-		nodeList.get(1).value = parent.leftSightFood();
-		nodeList.get(2).value = parent.middleSightBot();
-		nodeList.get(3).value = parent.middleSightFood();
-		nodeList.get(4).value = parent.rightSightBot();
-		nodeList.get(5).value = parent.rightSightFood();
-	}
-
-	boolean areAllNodesComplete() {
-		for (Node n : nodeList) {
-			if (n.complete == false) return false;
-		}
-		return true;
+	public float sigmoid(float in) {
+		return (float) (1 / (1 + Math.exp(-in)));
 	}
 }

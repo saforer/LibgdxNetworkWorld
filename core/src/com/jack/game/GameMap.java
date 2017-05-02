@@ -17,6 +17,7 @@ public class GameMap {
 	int row = 35;
 	int column = 31;
 	int deckerMin = 0;
+	public static float actionTimer = 2.0f;
 	static Tile[][] tiles;
 	static List<Decker> deckerList = new ArrayList<Decker>();
 	static List<Food> foodList = new ArrayList<Food>();
@@ -34,7 +35,7 @@ public class GameMap {
 			}
 		}
 
-		for (int i = 0; i < 100; i++) {
+		for (int i = 0; i < 1; i++) {
 			newRandomDecker();
 		}
 	}
@@ -77,6 +78,12 @@ public class GameMap {
 			killAllDeckers();
 		}
 
+		if (Gdx.input.isKeyJustPressed(Input.Keys.S)) {
+			while (deckerList.size() < 1) {
+				newRandomDecker();
+			}
+		}
+
 		if (Gdx.input.isKeyJustPressed(Input.Keys.X)) {
 			int x = MathUtils.random(row-1);
 			int y = MathUtils.random(column-1);
@@ -86,6 +93,14 @@ public class GameMap {
 					foodList.add(new Food(x, y));
 				}
 			}
+		}
+
+		if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
+			if (actionTimer>.5f) actionTimer-=.5f;
+		}
+
+		if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
+			actionTimer+=.5f;
 		}
 
 		while (deckerList.size() < deckerMin) {
@@ -183,7 +198,9 @@ public class GameMap {
 
 		if (!doesDeckerExistAtLocation(x,y)) {
 			int r = MathUtils.random(Direction.values().length-1);
-			deckerList.add(new Decker(x, y, Direction.values()[r]));
+			Decker d = new Decker(x, y, Direction.values()[r]);
+			deckerList.add(d);
+			d.ai.parent = d;
 		}
 	}
 
@@ -202,4 +219,5 @@ public class GameMap {
 			if (decker == d) destroy.add(decker);
 		}
 	}
+
 }
