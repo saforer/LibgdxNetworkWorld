@@ -26,7 +26,7 @@ public class Decker {
     int rotatingAmount = 0;
     Direction facingDirection = Direction.Right;
 
-    float movSpeed = 1f;
+    float movSpeed = 5f;
     public boolean moving = false;
     float movingAmount = 0;
     public int movingFromGridX;
@@ -88,7 +88,7 @@ public class Decker {
         } else if (moving) {
             if (movingAmount < 1f) {
                 movingAmount += movSpeed * dt;
-                Vector2 currentPos = oldPos;
+                Vector2 currentPos = oldPos.cpy();
                 currentPos.lerp(pos, movingAmount);
                 posX = (int) currentPos.x + 3;
                 posY = (int) currentPos.y + 4;
