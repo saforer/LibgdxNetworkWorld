@@ -13,8 +13,6 @@ public class Tile {
 	public int posY;
 	public int gridX;
 	public int gridY;
-	public float energy = 0;
-	public float energyPerSec = 10;
 	public Tile (int gridX, int gridY, int posX, int posY) {
 		if (map == null) {
 			map = GameMap.getI();
@@ -22,22 +20,9 @@ public class Tile {
 		if (pic == null) {
 			pic = new Texture("Hex.png");
 		}
-		energy += MathUtils.random((500*2));
 		this.gridX = gridX;
 		this.gridY = gridY;
 		this.posX = posX;
 		this.posY = posY;
-	}
-
-	public void update(float dt) {
-		if (!map.doesDeckerExistAtLocation(gridX, gridY)) {
-			if (!map.foodOnTile(gridX, gridY)) {
-				energy += dt * energyPerSec;
-				if (energy >= 1000) {
-					map.makeNewFood(gridX, gridY);
-					energy = 0;
-				}
-			}
-		}
 	}
 }
