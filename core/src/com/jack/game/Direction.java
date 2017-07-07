@@ -1,5 +1,8 @@
 package com.jack.game;
 
+import com.badlogic.gdx.math.MathUtils;
+
+
 /**
  * Created by Forer on 4/28/2017.
  */
