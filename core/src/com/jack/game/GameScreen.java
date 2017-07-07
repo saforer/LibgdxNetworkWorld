@@ -9,7 +9,7 @@ public class GameScreen extends Screen {
 	public GameMap map;
 
 	public GameScreen() {
-		 map = new GameMap();
+		 map = GameMap.getI();
 		 map.startup();
 	}
 

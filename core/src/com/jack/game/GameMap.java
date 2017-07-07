@@ -5,7 +5,6 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -17,13 +16,14 @@ public class GameMap {
     int column = 31;
     final float actionTimer = 2.0f;
     float actionCount = 0.0f;
-    static Tile[][] tiles;
+    Tile[][] tiles;
 
     int deckerStartCount = 60;
 
     public List<Decker> deckerList = new ArrayList<Decker>();
+    List<Decker> toRemove = new ArrayList<Decker>();
 
-    protected GameMap() {}
+    private GameMap() {}
 
     public void startup() {
         tiles = new Tile[row][column];
@@ -43,19 +43,12 @@ public class GameMap {
             randY = MathUtils.random(column-1);
             randD = Direction.values()[MathUtils.random(Direction.values().length -1)];
 
-            if (!doesDeckerExistAtLocation(randX, randY)) {
+            if (getDeckerAt(randX, randY) == null) {
                 Decker d = new Decker(randX, randY, randD);
                 deckerList.add(d);
+                d.name = deckerList.size() + "";
             }
         }
-
-        randX = MathUtils.random(row-1);
-        randY = MathUtils.random(column-1);
-        randD = Direction.values()[MathUtils.random(Direction.values().length -1)];
-
-        Decker player = new Decker(randX, randY, randD);
-        player.ai = null;
-        deckerList.add(player);
     }
 
     public static GameMap getI() {
@@ -70,6 +63,12 @@ public class GameMap {
         for (Decker d : deckerList) {
             d.update(dt);
         }
+
+        for (Decker r : toRemove) {
+            deckerList.remove(r);
+        }
+
+        toRemove.clear();
     }
 
     public void draw (SpriteBatch sb) {
@@ -109,17 +108,22 @@ public class GameMap {
         return true;
     }
 
-    public boolean doesDeckerExistAtLocation (int x, int y) {
-        System.out.print("1");
-
+    public Decker getDeckerAt(int x, int y) {
         for (Decker decker : deckerList) {
-            System.out.print("2");
-            if ((decker.gridX == x) && (decker.gridY == y)) return true;
+
+            if ((decker.gridX == x) && (decker.gridY == y)) return decker;
+
             if (decker.moving) {
-                if ((decker.movingFromGridX == x) && (decker.movingFromGridY == y)) return true;
+                if ((decker.movingFromGridX == x) && (decker.movingFromGridY == y)) return decker;
             }
         }
-        System.out.print("3");
-        return false;
+
+        return null;
     }
+
+
+    public void removeDecker(Decker d) {
+        toRemove.add(d);
+    }
+
 }

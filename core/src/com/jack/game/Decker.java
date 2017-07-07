@@ -13,11 +13,8 @@ import com.jack.aistuff.RandomAI;
  */
 public class Decker {
 
-    /*
-       TODO: Bugs eat bugs that get walked on their tile
-     */
-
     static GameMap map;
+    public String name;
     public static Texture pic;
     public int posX;
     public int posY;
@@ -42,6 +39,8 @@ public class Decker {
     Vector2 pos;
     Vector2 oldPos;
 
+    int bugsEaten = 0;
+
     AI ai;
 
     public Decker (int x, int y) {
@@ -63,7 +62,7 @@ public class Decker {
         posY += 4;
 
 
-        ai = new DummyAI(this);
+        ai = new RandomAI(this);
     }
 
     public Decker (int x, int y, Direction d) {
@@ -176,16 +175,14 @@ public class Decker {
         toGridY = (int) tile.y;
 
         if (!map.doesTileExistAtLocation(toGridX, toGridY)) {
+            //dummyCountDown();
             return;
         }
 
-        System.out.print("Tile Gave True");
-
-        if (!map.doesDeckerExistAtLocation(toGridX, toGridY)) {
-            return;
+        Decker temp = map.getDeckerAt(toGridX, toGridY);
+        if (temp != null) {
+            eatBug(temp);
         }
-
-        System.out.print("Decker Gave True");
 
         moving = true;
         doingSomething = true;
@@ -196,6 +193,12 @@ public class Decker {
         pos = map.gridToWorld(gridX, gridY);
         oldPos = map.gridToWorld(movingFromGridX, movingFromGridY);
     }
+
+    public void eatBug(Decker d) {
+        map.removeDecker(d);
+        bugsEaten++;
+    }
+
 
     public Vector2 tileInFront(int turn) {
         int toGridX = gridX;
@@ -255,6 +258,10 @@ public class Decker {
 
         return new Vector2 (toGridX, toGridY);
 
+    }
+
+    public void layEgg() {
+        //TODO: This shit
     }
 
 }
