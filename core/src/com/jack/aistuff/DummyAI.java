@@ -14,4 +14,14 @@ public class DummyAI extends AI {
     //DUMMY AI DOES NOTHING
 
     public void update(){}
+
+    @Override
+    public void printOutput() {
+
+    }
+
+    @Override
+    public void printInput() {
+
+    }
 }

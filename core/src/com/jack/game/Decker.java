@@ -1,12 +1,9 @@
 package com.jack.game;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.math.Vector2;
 import com.jack.aistuff.AI;
-import com.jack.aistuff.DummyAI;
-import com.jack.aistuff.RandomAI;
+import com.jack.aistuff.NeatAI;
 
 /**
  * Created by Forer on 6/25/2017.
@@ -14,10 +11,9 @@ import com.jack.aistuff.RandomAI;
 public class Decker {
 
     static GameMap map;
-    public String name;
     public static Texture pic;
-    public int posX;
-    public int posY;
+    public float posX;
+    public float posY;
     public int gridX;
     public int gridY;
     public int rot = 0;
@@ -26,7 +22,6 @@ public class Decker {
     public boolean rotating = false;
     int rotatingAmount = 0;
     Direction facingDirection = Direction.Right;
-    public boolean doingSomething = false;
 
     float dummyCount = 0f;
     boolean dummy = false;
@@ -39,9 +34,31 @@ public class Decker {
     Vector2 pos;
     Vector2 oldPos;
 
-    int bugsEaten = 0;
-
     AI ai;
+
+    /*AI Stuff needed
+        Is there a bug infront?
+        is there bug to the left?
+        is there bug to the right?
+
+        Is there food infront?
+        is there food to the left?
+        is there food to the right?
+
+
+        is there a wall infront?
+        is there a wall to the left?
+        is there a wall to the right?
+     */
+    public boolean bugInFront = false;
+    public boolean bugLeft = false;
+    public boolean bugRight = false;
+
+    public boolean wallInFront = false;
+    public boolean wallLeft = false;
+    public boolean wallRight = false;
+
+    public boolean currentlyDoingSomething = false;
 
     public Decker (int x, int y) {
         if (map == null) {
@@ -61,8 +78,9 @@ public class Decker {
         posX += 3;
         posY += 4;
 
-
-        ai = new RandomAI(this);
+        if (ai == null) {
+            ai = new NeatAI(this);
+        }
     }
 
     public Decker (int x, int y, Direction d) {
@@ -85,8 +103,13 @@ public class Decker {
         }
     }
 
-
     public void update(float dt) {
+        if (doingSomething()) {
+            currentlyDoingSomething = true;
+        } else {
+            currentlyDoingSomething = false;
+        }
+
         if (rotating) {
             if (rotatingAmount > 0) {
                 rot += rotSpeed;
@@ -96,7 +119,6 @@ public class Decker {
                 rotatingAmount += rotSpeed;
             } else {
                 rotating = false;
-                doingSomething = false;
             }
         } else if (moving) {
             if (movingAmount < 1f) {
@@ -107,7 +129,6 @@ public class Decker {
                 posY = (int) currentPos.y + 4;
             } else {
                 moving = false;
-                doingSomething = false;
                 movingAmount = 0f;
                 movingFromGridX = 0;
                 movingFromGridY = 0;
@@ -115,8 +136,8 @@ public class Decker {
                 oldPos = null;
 
                 Vector2 pos = map.gridToWorld(gridX, gridY);
-                posX = (int) pos.x;
-                posY = (int) pos.y;
+                posX = pos.x;
+                posY = pos.y;
                 posX += 3;
                 posY += 4;
             }
@@ -125,80 +146,64 @@ public class Decker {
                 dummyCount -= dt;
             } else {
                 dummy = false;
-                doingSomething = false;
             }
-        } else {
-            if (ai == null) {
-                if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT) && !rotating && !moving) {
-                    rotateLeft();
-                }
-                if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT) && !rotating && !moving) {
-                    rotateRight();
-                }
-                if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && !rotating && !moving) {
-                    move();
-                }
-            } else {
-                ai.update();
-            }
+        }
+        if (ai != null) {
+            setSensors();
+            ai.update();
         }
     }
 
     public void rotateLeft() {
-        rotating = true;
-        rotatingAmount = 60;
-        facingDirection = facingDirection.next();
-        doingSomething = true;
+        if (!doingSomething()) {
+            rotating = true;
+            rotatingAmount = 60;
+            facingDirection = facingDirection.next();
+        }
     }
 
     public void rotateRight() {
-        rotating = true;
-        rotatingAmount = -60;
-        facingDirection = facingDirection.prev();
-        doingSomething = true;
+        if (!doingSomething()) {
+            rotating = true;
+            rotatingAmount = -60;
+            facingDirection = facingDirection.prev();
+        }
     }
 
     public void dummyCountDown() {
-        //Tried to do something couldn't SOOOOOOOO Dummy move
-        dummy = true;
-        dummyCount = 5f;
-        doingSomething = true;
+        if (!doingSomething()) {
+            //Tried to do something couldn't SOOOOOOOO Dummy move
+            ai.printInput();
+            ai.printOutput();
+            dummy = true;
+            dummyCount = 5f;
+        }
     }
 
     public void move() {
-        int toGridX;
-        int toGridY;
+        if (!doingSomething()) {
+            int toGridX;
+            int toGridY;
 
-        Vector2 tile = tileInFront(0);
+            Vector2 tile = tileInFront(0);
 
-        toGridX = (int) tile.x;
-        toGridY = (int) tile.y;
+            toGridX = (int) tile.x;
+            toGridY = (int) tile.y;
 
-        if (!map.doesTileExistAtLocation(toGridX, toGridY)) {
-            //dummyCountDown();
-            return;
+            if (!map.doesTileExistAtLocation(toGridX, toGridY)) {
+                dummyCountDown();
+                return;
+            }
+
+            moving = true;
+            movingFromGridX = gridX;
+            movingFromGridY = gridY;
+            gridX = toGridX;
+            gridY = toGridY;
+            pos = map.gridToWorld(gridX, gridY);
+            oldPos = map.gridToWorld(movingFromGridX, movingFromGridY);
         }
-
-        Decker temp = map.getDeckerAt(toGridX, toGridY);
-        if (temp != null) {
-            eatBug(temp);
-        }
-
-        moving = true;
-        doingSomething = true;
-        movingFromGridX = gridX;
-        movingFromGridY = gridY;
-        gridX = toGridX;
-        gridY = toGridY;
-        pos = map.gridToWorld(gridX, gridY);
-        oldPos = map.gridToWorld(movingFromGridX, movingFromGridY);
     }
-
-    public void eatBug(Decker d) {
-        map.removeDecker(d);
-        bugsEaten++;
-    }
-
 
     public Vector2 tileInFront(int turn) {
         int toGridX = gridX;
@@ -260,8 +265,40 @@ public class Decker {
 
     }
 
-    public void layEgg() {
-        //TODO: This shit
+    void setSensors() {
+        bugInFront = isBugAtPosition(0);
+        bugLeft = isBugAtPosition(-1);
+        bugRight = isBugAtPosition(1);
+
+        wallInFront = !isWallAtPosition(0);
+        wallLeft = !isWallAtPosition(-1);
+        wallRight = !isWallAtPosition(1);
     }
 
+    boolean isBugAtPosition (int turn) {
+        Vector2 tileFront = tileInFront(turn);
+
+        if (GameMap.getI().getDeckerAt((int) tileFront.x, (int) tileFront.y) == null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    boolean isWallAtPosition (int turn) {
+        Vector2 tileFront = tileInFront(turn);
+
+        if (GameMap.getI().doesTileExistAtLocation((int) tileFront.x, (int) tileFront.y)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public boolean doingSomething() {
+        if (moving) return true;
+        if (rotating) return true;
+        if (dummy) return true;
+        return false;
+    }
 }

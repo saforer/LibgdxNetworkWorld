@@ -15,9 +15,19 @@ public class RandomAI extends AI{
 
     @Override
     public void update() {
-        if (parent.doingSomething == false) {
+        if (!parent.doingSomething()) {
             thinkOfSomethingToDo();
         }
+    }
+
+    @Override
+    public void printOutput() {
+
+    }
+
+    @Override
+    public void printInput() {
+
     }
 
 

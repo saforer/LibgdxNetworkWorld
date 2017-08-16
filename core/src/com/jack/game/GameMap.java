@@ -3,6 +3,8 @@ package com.jack.game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
+import com.jack.aistuff.NeatAI;
+import com.jack.aistuff.PlayerAI;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,16 +40,13 @@ public class GameMap {
         int randY;
         Direction randD;
 
-        while (deckerList.size() < deckerStartCount) {
-            randX = MathUtils.random(row-1);
-            randY = MathUtils.random(column-1);
-            randD = Direction.values()[MathUtils.random(Direction.values().length -1)];
-
-            if (getDeckerAt(randX, randY) == null) {
-                Decker d = new Decker(randX, randY, randD);
-                deckerList.add(d);
-                d.name = deckerList.size() + "";
-            }
+        int count = 30;
+        for (int i = 0; i < count; i++) {
+            randX = MathUtils.random(row - 1);
+            randY = MathUtils.random(column - 1);
+            randD = Direction.values()[MathUtils.random(Direction.values().length - 1)];
+            Decker d = new Decker(randX, randY, randD);
+            deckerList.add(d);
         }
     }
 
