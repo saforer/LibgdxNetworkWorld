@@ -40,7 +40,7 @@ public class GameMap {
         int randY;
         Direction randD;
 
-        int count = 30;
+        int count = 1;
         for (int i = 0; i < count; i++) {
             randX = MathUtils.random(row - 1);
             randY = MathUtils.random(column - 1);

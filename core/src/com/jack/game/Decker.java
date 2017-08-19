@@ -147,8 +147,7 @@ public class Decker {
             } else {
                 dummy = false;
             }
-        }
-        if (ai != null) {
+        } else if (ai != null) {
             setSensors();
             ai.update();
         }
@@ -173,8 +172,6 @@ public class Decker {
     public void dummyCountDown() {
         if (!doingSomething()) {
             //Tried to do something couldn't SOOOOOOOO Dummy move
-            ai.printInput();
-            ai.printOutput();
             dummy = true;
             dummyCount = 5f;
         }
@@ -191,6 +188,11 @@ public class Decker {
             toGridY = (int) tile.y;
 
             if (!map.doesTileExistAtLocation(toGridX, toGridY)) {
+                dummyCountDown();
+                return;
+            }
+
+            if (map.getDeckerAt(toGridX, toGridY) != null) {
                 dummyCountDown();
                 return;
             }

@@ -1,8 +1,9 @@
 package com.jack.aistuff;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.math.MathUtils;
 import com.jack.game.Decker;
-import jdk.nashorn.internal.runtime.regexp.joni.constants.NodeType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,6 +15,7 @@ import java.util.List;
 public class NeatAI extends AI {
 
 	List<Node> nodeList = new ArrayList<Node>();
+	boolean debugFired = false;
 
 	public NeatAI(Decker parent) {
 		this.parent = parent;
@@ -21,7 +23,7 @@ public class NeatAI extends AI {
 		//Insert values
 
 		//Example Data:
-		String inputData = "0S!1S!2S!3S!4H:0,.25;1,.5;2,.75!5H:6,.4;4,.25!6H:2,.75;3,.6!7O:6,1!8O:4,1;6,1!9O:5,1";
+		//String inputData = "0S!1S!2S!3S!4H:0,.25;1,.5;2,.75!5H:6,.4;4,.25!6H:2,.75;3,.6!7O:6,1!8O:4,1;6,1!9O:5,1";
 
 
 
@@ -30,14 +32,32 @@ public class NeatAI extends AI {
 		//String inputData = "0S!1S!2S!3S!4S!5S!6S!7O:6,.9!8O!9O:10, 1!10H: 0, 1.1; 3, 1.1";
 
 
-		//String inputData = "0S!1S!2S!3S!4S!5S!6S!7O!8O!9O";
+		String inputData = "0S!1S!2S!3S!4S!5S!6S!7O!8O!9O";
 
 
 
 		convertStringToNodeList(inputData);
 
 
-		//randomAddConnection();
+		int startingNewConnections = 7;
+
+		for (int i = 0; i < startingNewConnections; i++) {
+			randomAddConnection();
+		}
+
+		int startingNewNodes = 3;
+
+		for (int i = 0; i < startingNewNodes; i++) {
+			randomAddNode();
+		}
+
+		int startingModifyWeights = 15;
+
+		for (int i = 0; i < startingModifyWeights; i++) {
+			randomChangeWeight();
+		}
+
+
 	}
 
 	void convertStringToNodeList(String input) {
@@ -153,6 +173,12 @@ public class NeatAI extends AI {
 
 		while (allNodesIncomplete()) {
 
+			if (currentNode == 11) {
+				//wtf
+				return;
+			}
+
+
 			if (nodeList.get(currentNode).complete) {
 				currentNode++;
 			} else if (nodeList.get(currentNode).type == NeuronType.sensor) {
@@ -243,7 +269,6 @@ public class NeatAI extends AI {
 			calculate();
 
 
-
 			//Do output
 			int currentHighestNode = 9;
 			float currentHighestValue = getValueManually(9); //Right
@@ -254,11 +279,9 @@ public class NeatAI extends AI {
 			}
 
 			if (currentHighestValue < getValueManually(7)) {
-				currentHighestNode = 9;
+				currentHighestNode = 7;
 				currentHighestValue = getValueManually(7); //Forward
 			}
-
-			if ((parent.wallInFront == true) && (currentHighestNode == 7)) System.out.println("Wall in front & moved forward");
 
 
 			switch (currentHighestNode) {
@@ -274,6 +297,8 @@ public class NeatAI extends AI {
 					break;
 			}
 		}
+
+		if (Gdx.input.isKeyPressed(Input.Keys.Z)) printAllNodes();
 	}
 
 	void resetSensors() {
@@ -347,41 +372,108 @@ public class NeatAI extends AI {
 
 			selectedParent = validParents.get(randomIntForParent);
 
-			String[] parentArray = getParents(selectedParent).split("\\s");
-
 			for (Connection c : selectedChild.parentList) {
 				if (c.parentNumber == randomIntForParent) {
 					selectedParent = null;
 				}
 			}
 
-			for (int i = 0; i < parentArray.length; i++) {
-				if (parentArray[i] == selectedChild.number + "") {
-					selectedParent = null;
+			if (selectedParent != null) {
+				String[] parentArray = getParents(selectedParent).split("\\s");
+
+
+				for (int i = 0; i < parentArray.length; i++) {
+					if (parentArray[i] == selectedChild.number + "") {
+						selectedParent = null;
+					}
 				}
 			}
-
 
 		}
 
 		addParent(selectedChild.number, selectedParent.number, randomWeight);
 	}
 
-	String getParents(Node n) {
-		if (n.parentList.isEmpty()) {
-			return "";
-		} else {
-			String output = "";
-			for (Connection c : n.parentList) {
-				output += c.parentNumber + " ";
-				output += getParents(nodeList.get(c.parentNumber));
+	void randomChangeWeight() {
+		//Get nodes that have connections
+		List<Node> hasConnection = new ArrayList<Node>();
+
+		for (int i = 0; i < nodeList.size(); i++) {
+			if (!nodeList.get(i).parentList.isEmpty()) {
+				hasConnection.add(nodeList.get(i));
 			}
-			return output;
+		}
+
+		if (!hasConnection.isEmpty()) {
+			//Select a random node from the list of nodes that have a connection
+			int randomInt = MathUtils.random(hasConnection.size() - 1);
+			Node randomNode = hasConnection.get(randomInt);
+
+			//Find a random connection on the node that has a connection
+			randomInt = MathUtils.random(randomNode.parentList.size() - 1);
+			Connection randomConnection = randomNode.parentList.get(randomInt);
+
+			//Set a random weight on the connection
+			randomConnection.weight = MathUtils.random(-1f, 1f);
 		}
 	}
 
 	void randomAddNode() {
+		//Get nodes that have connections
+		List<Node> hasConnection = new ArrayList<Node>();
 
+		for (int i = 0; i < nodeList.size(); i++) {
+			if (!nodeList.get(i).parentList.isEmpty()) {
+				hasConnection.add(nodeList.get(i));
+			}
+		}
+
+		//Select a random node from the list of nodes that have a connection
+		int randomInt = MathUtils.random(hasConnection.size() -1);
+		Node randomNode = hasConnection.get(randomInt);
+
+		//Find a random connection on the node that has a connection
+		randomInt = MathUtils.random(randomNode.parentList.size() -1);
+		Connection randomConnection = randomNode.parentList.get(randomInt);
+
+
+		//Break connection (disable connection)
+		randomConnection.enabled = false;
+
+		//New Node
+		Node n = new Node(this);
+		n.number = getNewNodeNumber();
+		n.type = NeuronType.hidden;
+		nodeList.add(n);
+
+		//New node connection to old parent node, same weight as before
+		addParent(n.number, randomConnection.parentNumber, randomConnection.weight);
+
+
+		//Old child to new node, weight 1
+		addParent(randomNode.number, n.number, 1f);
+	}
+
+	int getNewNodeNumber() {
+		return nodeList.size();
+	}
+
+	void randomEnableConnection() {
+		//Find connection that has been disabled
+		//Re-enable it
+	}
+
+	String getParents(Node n) {
+
+		if (n.parentList.isEmpty()) {
+			return "";
+		}
+
+		String output = "";
+		for (Connection c : n.parentList) {
+			output += c.parentNumber + " ";
+		}
+		return output;
 	}
 }
 
@@ -407,17 +499,21 @@ class Node {
 
 	public boolean parentsComplete () {
 		for (Connection c : parentList) {
-			//is there an incomplete node?
-			Node p = neatAI.getNodeByIdentifier(c.parentNumber);
-			if (!p.complete) return false;
+			if (c.enabled) {
+				//is there an incomplete node?
+				Node p = neatAI.getNodeByIdentifier(c.parentNumber);
+				if (!p.complete) return false;
+			}
 		}
 		return true;
 	}
 
 	public void calc() {
 		for (Connection c : parentList) {
-			Node currentParent = neatAI.getNodeByIdentifier((c.parentNumber));
-			value += currentParent.value * c.weight;
+			if (c.enabled) {
+				Node currentParent = neatAI.getNodeByIdentifier((c.parentNumber));
+				value += currentParent.value * c.weight;
+			}
 		}
 	}
 
@@ -444,6 +540,7 @@ class Node {
 class Connection {
 	int parentNumber;
 	float weight;
+	boolean enabled = true;
 
 	public Connection(int parentID, float weight) {
 		this.parentNumber = parentID;
