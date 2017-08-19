@@ -15,49 +15,18 @@ import java.util.List;
 public class NeatAI extends AI {
 
 	List<Node> nodeList = new ArrayList<Node>();
-	boolean debugFired = false;
 
 	public NeatAI(Decker parent) {
+		this(parent, "0S!1S!2S!3S!4S!5S!6S!7S!8S!9S!10S!11S!12S!13S!14S!15S!16O!17O!18O!19O!20O");
+	}
+
+	public NeatAI(Decker parent, String inputData) {
 		this.parent = parent;
-
-		//Insert values
-
-		//Example Data:
-		//String inputData = "0S!1S!2S!3S!4H:0,.25;1,.5;2,.75!5H:6,.4;4,.25!6H:2,.75;3,.6!7O:6,1!8O:4,1;6,1!9O:5,1";
-
-
-
-		//Always go forward
-		//If bug in front or if food in front, turn right
-		//String inputData = "0S!1S!2S!3S!4S!5S!6S!7O:6,.9!8O!9O:10, 1!10H: 0, 1.1; 3, 1.1";
-
-
-		String inputData = "0S!1S!2S!3S!4S!5S!6S!7O!8O!9O";
-
-
 
 		convertStringToNodeList(inputData);
 
 
-		int startingNewConnections = 7;
-
-		for (int i = 0; i < startingNewConnections; i++) {
-			randomAddConnection();
-		}
-
-		int startingNewNodes = 3;
-
-		for (int i = 0; i < startingNewNodes; i++) {
-			randomAddNode();
-		}
-
-		int startingModifyWeights = 15;
-
-		for (int i = 0; i < startingModifyWeights; i++) {
-			randomChangeWeight();
-		}
-
-
+		Mutate();
 	}
 
 	void convertStringToNodeList(String input) {
@@ -125,26 +94,52 @@ public class NeatAI extends AI {
 				addNodeFromString(secondLine); //No connections for this node!
 			}
 		}
+	}
 
-
+	public String nodeListToString () {
+		String output = "";
+		for (Node n : nodeList) {
+			String nodeType = "";
+			switch (n.type) {
+				case sensor:
+					nodeType+="S";
+					break;
+				case hidden:
+					nodeType+="H";
+					break;
+				case output:
+					nodeType+="O";
+					break;
+			}
+			if (n.parentList.isEmpty()) {
+				output += n.number + nodeType + "!";
+			} else {
+				output += n.number + nodeType + ":";
+				for (Connection c : n.parentList) {
+					output+=c.parentNumber + "," + c.weight+";";
+				}
+				output+="!";
+			}
+		}
+		return output;
 	}
 
 	void addNodeFromString (String nodeString) {
-		char[] nodeChars = nodeString.toCharArray();
+		String chopped = nodeString.substring(nodeString.length()-1);
 		NeuronType type;
-		switch (nodeChars[1]) {
-			case 'S':
-				type = NeuronType.sensor;
-				break;
-			case 'O':
-				type = NeuronType.output;
-				break;
-			default:
-			case 'H':
-				type = NeuronType.hidden;
-				break;
+
+
+
+		if (chopped.equalsIgnoreCase("S")) {
+			type = NeuronType.sensor;
+		} else if (chopped.equalsIgnoreCase("O")) {
+			type = NeuronType.output;
+		} else {
+			type = NeuronType.hidden;
 		}
+
 		int nodeNumber = Integer.parseInt(nodeString.substring(0, nodeString.length() - 1));
+
 
 		addNode(nodeNumber, type);
 	}
@@ -268,47 +263,71 @@ public class NeatAI extends AI {
 			//Calculate output
 			calculate();
 
-
 			//Do output
-			int currentHighestNode = 9;
-			float currentHighestValue = getValueManually(9); //Right
+			int currentHighestNode = 19;
+			float currentHighestValue = getValueManually(19); //Eat
 
-			if (currentHighestValue < getValueManually(8)) {
-				currentHighestNode = 8;
-				currentHighestValue = getValueManually(8); //Left
+			if (currentHighestValue < getValueManually(17)) {
+				currentHighestNode = 17;
+				currentHighestValue = getValueManually(17); //Left
 			}
 
-			if (currentHighestValue < getValueManually(7)) {
-				currentHighestNode = 7;
-				currentHighestValue = getValueManually(7); //Forward
+			if (currentHighestValue < getValueManually(16)) {
+				currentHighestNode = 16;
+				currentHighestValue = getValueManually(16); //Forward
+			}
+
+			if (currentHighestValue < getValueManually(18)) {
+				currentHighestNode = 18;
+				currentHighestValue = getValueManually(18); //Right
+			}
+
+			if (currentHighestValue < getValueManually(20)) {
+				currentHighestNode = 20;
+				currentHighestValue = getValueManually(20); //Egg
 			}
 
 
 			switch (currentHighestNode) {
-				case 7:
+				case 16:
 					parent.move();
 					break;
-				case 8:
+				case 17:
 					parent.rotateLeft();
 					break;
-				case 9:
+				case 18:
 				default:
 					parent.rotateRight();
 					break;
+				case 20:
+					parent.layEgg();
+					break;
+				case 19:
+					parent.eat();
+					break;
 			}
 		}
-
-		if (Gdx.input.isKeyPressed(Input.Keys.Z)) printAllNodes();
 	}
+
+
 
 	void resetSensors() {
 		setValueManually(0, parent.bugInFront?1:0);
 		setValueManually(1, parent.bugLeft?1:0);
 		setValueManually(2, parent.bugRight?1:0);
-		setValueManually(3, parent.wallInFront?1:0);
-		setValueManually(4, parent.wallLeft?1:0);
-		setValueManually(5, parent.wallRight?1:0);
-		setValueManually(6, 1); //Constant 1
+		setValueManually(3, parent.bugBehind?1:0);
+		setValueManually(4, parent.foodInFront?1:0);
+		setValueManually(5, parent.foodLeft?1:0);
+		setValueManually(6, parent.foodRight?1:0);
+		setValueManually(7, parent.foodBehind?1:0);
+		setValueManually(8, parent.wallInFront?1:0);
+		setValueManually(9, parent.wallLeft?1:0);
+		setValueManually(10, parent.wallRight?1:0);
+		setValueManually(11, parent.wallBehind?1:0);
+		setValueManually(12, 1f);
+		setValueManually(13, -1f);
+		setValueManually(14, parent.foodPercent);
+		setValueManually(15, parent.currentFood);
 	}
 
 	public void printInput() {
@@ -331,8 +350,36 @@ public class NeatAI extends AI {
 
 
 
-	void Mutate() {
+	public void Mutate() {
+		float randomFloat = MathUtils.random(1);
 
+		if (randomFloat > .75) {
+			randomChangeWeight();
+		}
+
+		randomFloat = MathUtils.random(1);
+
+		if (randomFloat > .5) {
+			randomAddConnection();
+		}
+
+		randomFloat = MathUtils.random(1);
+
+		if (randomFloat > .2) {
+			randomDisableConnection();
+		}
+
+		randomFloat = MathUtils.random(1);
+
+		if (randomFloat > .2) {
+			randomEnableConnection();
+		}
+
+		randomFloat = MathUtils.random(1);
+
+		if (randomFloat > .1) {
+			randomAddNode();
+		}
 	}
 
 	void randomAddConnection() {
@@ -418,6 +465,32 @@ public class NeatAI extends AI {
 		}
 	}
 
+	void randomDisableConnection() {
+		//Get nodes that have connections
+		List<Node> hasConnection = new ArrayList<Node>();
+
+		for (int i = 0; i < nodeList.size(); i++) {
+			if (!nodeList.get(i).parentList.isEmpty()) {
+				hasConnection.add(nodeList.get(i));
+			}
+		}
+
+		//Select a random node from the list of nodes that have a connection
+		if (hasConnection.isEmpty()) {
+			return;
+		}
+		int randomInt = MathUtils.random(hasConnection.size() -1);
+		Node randomNode = hasConnection.get(randomInt);
+
+		//Find a random connection on the node that has a connection
+		randomInt = MathUtils.random(randomNode.parentList.size() -1);
+		Connection randomConnection = randomNode.parentList.get(randomInt);
+
+
+		//Break connection (disable connection)
+		randomConnection.enabled = false;
+	}
+
 	void randomAddNode() {
 		//Get nodes that have connections
 		List<Node> hasConnection = new ArrayList<Node>();
@@ -429,6 +502,9 @@ public class NeatAI extends AI {
 		}
 
 		//Select a random node from the list of nodes that have a connection
+		if (hasConnection.isEmpty()) {
+			return;
+		}
 		int randomInt = MathUtils.random(hasConnection.size() -1);
 		Node randomNode = hasConnection.get(randomInt);
 
@@ -472,6 +548,16 @@ public class NeatAI extends AI {
 		String output = "";
 		for (Connection c : n.parentList) {
 			output += c.parentNumber + " ";
+		}
+		return output;
+	}
+
+	public int hiddenNodeCount () {
+		int output = 0;
+		for (int i = 0; i < nodeList.size(); i++) {
+			if (nodeList.get(i).type == NeuronType.hidden) {
+				output++;
+			}
 		}
 		return output;
 	}
@@ -547,6 +633,8 @@ class Connection {
 		this.weight = weight;
 	}
 }
+
+
 
 enum NeuronType {
 	sensor,
